@@ -1,8 +1,8 @@
-FROM node:4.6 as coverage
+FROM ubuntu:latest as coverage
 RUN sleep 10
 RUN echo "Run coverage"
 
-FROM node:4.6 as unittest
+FROM alpine:latest as unittest
 RUN sleep 10
 RUN echo "Run unit tests"
 
