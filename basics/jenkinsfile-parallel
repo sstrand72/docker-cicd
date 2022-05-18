@@ -1,24 +1,49 @@
-DOES NOT WORK - Fix
-
-
 pipeline {
-   def commit_id
-   stage('Preparation') {
-     checkout scm
-     sh "git rev-parse --short HEAD > .git/commit-id"
-     commit_id = readFile('.git/commit-id').trim()
+   agent any
+   environment {
+     def commit_id = ''
    }
-   stage("Docker Build and Sonarqube") {
-      parallel {
-        stage('dockerbuild') {
-          def app = docker.build("yanivomc/docker-nodejs-demo:${commit_id}", './basics')
+   stages {
+   stage('Preparation') {
+      steps {
+         script {
+          checkout scm
+          sh "git rev-parse --short HEAD > .git/commit-id"
+          commit_id = readFile('.git/commit-id').trim()
         }
-        stage('sonarqube tests') {
-            echo "Running sonarqube"                             
-        }   
-   }                                
-    stage('docker build/push') {            
-      echo "Running build/push"                                      
-    }   
-  }  
+      }
+   }
+   stage('Build And Test') {
+     parallel {
+       stage('dockerbuild') {
+          steps {
+             script {
+               dir('basics') {
+                def app = docker.build("stephensflynn/basics:${commit_id}", '.')
+              }  
+            }
+          }
+       }
+       stage('sonarqube tests') {
+           steps {
+               dir('basics') {
+           
+               // def app = docker.build("stephensflynn/sonar:${commit_id}", 'echo Test' , '.')                             
+                println "Run Sonar tests."
+              }
+           }
+       }
+     }
+   }
+   stage('docker build/push') {     
+      steps {
+        dir('basics') {
+          //docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+          //def app = docker.build("stephensflynn/basics:${commit_id}", '.').push()
+          //}
+          println "Push image."
+        }
+      }
+    }
+  }
 }
